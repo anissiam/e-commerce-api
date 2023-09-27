@@ -16,8 +16,9 @@ const cors = require('cors')
 const {error} = require("firebase-functions/logger");
 app.use(cors({origin: true}))
 let hashedPassword = "";
+
 class User {
-    constructor (id, name, email , password , token ) {
+    constructor(id, name, email, password, token) {
         this.id = id;
         this.email = email;
         this.name = name;
@@ -35,7 +36,7 @@ app.post('/api/createCategory', (req, res) => {
         try {
             await db.collection('categories').doc('/' + req.body.id + '/')
                 .create({
-                    id:req.body.id,
+                    id: req.body.id,
                     name: req.body.name,
                     stock: req.body.stock,
                     thumbnail: req.body.thumbnail
@@ -57,10 +58,10 @@ app.get('/api/categories', (req, res) => {
                 let docs = value.docs;
                 for (let doc of docs) {
                     const selectedItem = {
-                        id:doc.data().id,
+                        id: doc.data().id,
                         name: doc.data().name,
                         stock: doc.data().stock,
-                        thumbnail:doc.data().thumbnail
+                        thumbnail: doc.data().thumbnail
                     };
                     responce.push(selectedItem);
                 }
@@ -118,11 +119,11 @@ app.post('/api/create', (req, res) => {
         try {
             await db.collection('products').doc('/' + req.body.id + '/')
                 .create({
-                    id:req.body.id,
+                    id: req.body.id,
                     name: req.body.name,
                     description: req.body.description,
                     price: req.body.price,
-                    discount:req.body.discount,
+                    discount: req.body.discount,
                     rate: req.body.rate,
                     category: req.body.category,
                     view: req.body.view,
@@ -165,11 +166,11 @@ app.get('/api/read/', (req, res) => {
                 let docs = value.docs;
                 for (let doc of docs) {
                     const selectedItem = {
-                        id:doc.id,
+                        id: doc.id,
                         name: doc.data().name,
                         description: doc.data().description,
                         price: doc.data().price,
-                        discount:doc.data().discount,
+                        discount: doc.data().discount,
                         rate: doc.data().rate,
                         category: doc.data().category,
                         view: doc.data().view,
@@ -202,11 +203,11 @@ app.get('/api/getProduct?:q', (req, res) => {
                 for (let doc of docs) {
                     if (doc.data().name.toString().includes(q)) {
                         const selectedItem = {
-                            id:doc.data().id,
+                            id: doc.data().id,
                             name: doc.data().name,
                             description: doc.data().description,
                             price: doc.data().price,
-                            discount:doc.data().discount,
+                            discount: doc.data().discount,
                             rate: doc.data().rate,
                             category: doc.data().category,
                             view: doc.data().view,
@@ -240,7 +241,7 @@ app.get('/api/getProduct?:q', (req, res) => {
 app.post('/api/createUser', (req, res) => {
     (async () => {
         try {
-             bcrypt.genSalt(10, function (err, Salt) {
+            bcrypt.genSalt(10, function (err, Salt) {
                 bcrypt.hash(req.body.password, Salt, async function (err, hash) {
                     if (err) {
                         console.log(err);
@@ -281,7 +282,7 @@ app.get('/api/allUser/', (req, res) => {
                         id: doc.data().id,
                         name: doc.data().name,
                         email: doc.data().email,
-                        token:doc.data().token,
+                        token: doc.data().token,
                     };
                     responce.push(selectedItem);
                 }
@@ -294,8 +295,65 @@ app.get('/api/allUser/', (req, res) => {
         }
     })();
 })
+app.get('/api/login', (req, res) => {
+    (async () => {
+        try {
+            let email = req.query.email;
+            let password = req.query.password;
+            db.collection('User').where("email", "==", email)
+                .get().then(value => {
+                if (value.empty) {
 
-app.get('/api/login?:id', (req, res) => {
+                    return res.status(401).json({
+                        message: "Login not successful",
+                        error: "User not found",
+                    })
+                } else {
+                    value.docs.map((doc) => {
+                        if (doc.data().email != null && doc.data().email.toString().includes(email)) {
+                            const user = {
+                                id: doc.data().id,
+                                name: doc.data().name,
+                                email: doc.data().email,
+                                token: doc.data().token,
+                            };
+                            bcrypt.compare(password.toString(), doc.data().password,
+                                async function (err, isMatch) {
+                                    if (isMatch) {
+                                        return  res.status(200).json({
+                                            message: "Login successful",
+                                            user,
+                                        })
+                                    }else {
+                                       return  res.status(400).json({
+                                            message: "Email or Password not correct",
+                                        })
+                                    }
+                                })
+                        }
+                    })
+                }
+            });
+            /*for (let doc of docs) {
+                if (doc.data().email!=null && doc.data().email.toString().includes(q)) {
+                    const selectedItem = {
+                        id: doc.data().id,
+                        name: doc.data().name,
+                        email: doc.data().email,
+                        token:doc.data().token,
+                    };
+                    responce.push(selectedItem);
+                }
+            }
+            return responce*/
+            //return res.status(200).send(responce);
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
+/*app.get('/api/login?:email', (req, res) => {
     (async () => {
         try {
             const document = db.collection('User').doc(req.params.id);
@@ -312,7 +370,7 @@ app.get('/api/login?:id', (req, res) => {
         message: "Login not successful",
         error: "User not found",
     })
-})
+})*/
 
 app.get('/api/user/:id', (req, res) => {
     (async () => {
@@ -339,12 +397,12 @@ app.get('/api/userToken?:token', (req, res) => {
                 let docs = value.docs;
                 for (let doc of docs) {
                     console.log(doc.data())
-                    if (doc.data().token!=null && doc.data().token.toString().includes(q)) {
+                    if (doc.data().token != null && doc.data().token.toString().includes(q)) {
                         const selectedItem = {
                             id: doc.data().id,
                             name: doc.data().name,
                             email: doc.data().email,
-                            token:doc.data().token,
+                            token: doc.data().token,
                         };
                         responce.push(selectedItem);
                     }
@@ -367,17 +425,17 @@ app.put('/api/update/:id', (req, res) => {
             let userFireStore = await document.get();
             let response = userFireStore.data();
             let name = response.name;
-            if (req.body.name!==null){
+            if (req.body.name !== null) {
                 name = req.body.name;
             }
 
             let email = response.email;
-            if (req.body.email!==null){
+            if (req.body.email !== null) {
                 email = req.body.email;
             }
-            const  user = new User(response.id ,name ,email,response.password,response.token  )
+            const user = new User(response.id, name, email, response.password, response.token)
             await document.update({
-               user
+                user
             })
             return res.status(200).send("User Updated");
         } catch (e) {
