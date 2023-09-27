@@ -13,6 +13,10 @@ const express = require('express')
 const db = admin.firestore();
 const app = express();
 const cors = require('cors')
+//const bodyParser = require("body-parser");
+//app.use(express.bodyParser());
+//app.use(bodyParser.json())
+app.use(express.json());
 const {error, log} = require("firebase-functions/logger");
 app.use(cors({origin: true}))
 const port = 3000;
