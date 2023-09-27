@@ -13,8 +13,9 @@ const express = require('express')
 const db = admin.firestore();
 const app = express();
 const cors = require('cors')
-const {error} = require("firebase-functions/logger");
+const {error, log} = require("firebase-functions/logger");
 app.use(cors({origin: true}))
+const port = 3000;
 let hashedPassword = "";
 
 /*class User {
@@ -446,6 +447,8 @@ app.put('/api/update/:id', (req, res) => {
     })();
 })
 
-
+app.listen(port , () => {
+    console.log("Port is " + port);
+})
 exports.app = functions.https.onRequest(app);
 
