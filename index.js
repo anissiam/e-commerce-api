@@ -213,16 +213,16 @@ app.post('/api/register', (req, res) => {
                         return console.log('Cannot encrypt');
                     }
                     const token = crypto.randomBytes(64).toString('hex');
-                    await db.collection('User').doc('/' + req.body.id + '/')
-                        .create({
-                            id: req.body.id,
-                            name: req.body.name,
-                            email: req.body.email,
-                            password: hash,
-                            token: token,
+                    const doc=  db.collection('User').doc();
+                    await doc.create({
+                        id: doc.id,
+                        name: req.body.name,
+                        email: req.body.email,
+                        password: hash,
+                        token: token,
 
 
-                        })
+                    })
                     return res.status(200).send("User added");
                 })
             })
