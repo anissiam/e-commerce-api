@@ -260,8 +260,7 @@ app.get('/api/allUser/', (req, res) => {
 app.post('/api/login', (req, res) => {
     (async () => {
         try {
-            let email = req.body.email;
-            let password = req.body.password;
+            const { email, password } = req.body;
             db.collection('User').where("email", "==", email)
                 .get().then(value => {
                 if (value.empty) {
