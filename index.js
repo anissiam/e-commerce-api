@@ -18,7 +18,8 @@ const cors = require('cors')
 //app.use(bodyParser.json())
 app.use(express.json());
 const {error, log} = require("firebase-functions/logger");
-app.use(cors({origin: true}))
+app.use(cors({origin: true , credentials:true,
+    optionSuccessStatus:200}))
 const port = 3000;
 let hashedPassword = "";
 
@@ -206,29 +207,37 @@ app.get('/api/product?:name', (req, res) => {
 app.post('/api/register', (req, res) => {
     (async () => {
         try {
-            bcrypt.genSalt(10, function (err, Salt) {
-                bcrypt.hash(req.body.password, Salt, async function (err, hash) {
-                    if (err) {
-                        console.log(err);
-                        return console.log('Cannot encrypt');
-                    }
-                    const token = crypto.randomBytes(64).toString('hex');
-                    const doc=  db.collection('User').doc();
-                    await doc.create({
-                        id: doc.id,
-                        name: req.body.name,
-                        email: req.body.email,
-                        password: hash,
-                        token: token,
-
-
-                    })
-                    return res.status(200).send("User added");
-                })
-            })
+            db.collection('User').where("email", "==", req.body.email)
+               .get()
+               .then(value => {
+                   if (!value.empty){
+                       return res.status(409).json({
+                           message: "Signup not successful",
+                           error: "Email already used",
+                       })
+                   }else {
+                       bcrypt.genSalt(10, function (err, Salt) {
+                           bcrypt.hash(req.body.password, Salt, async function (err, hash) {
+                               if (err) {
+                                   console.log(err);
+                                   return console.log('Cannot encrypt');
+                               }
+                               const token = crypto.randomBytes(64).toString('hex');
+                               const doc=  db.collection('User').doc();
+                               await doc.create({
+                                   id: doc.id,
+                                   name: req.body.name,
+                                   email: req.body.email,
+                                   password: hash,
+                                   token: token,
+                               })
+                               return res.status(200).send("User added");
+                           })
+                       })
+                   }
+               })
 
         } catch (e) {
-            console.log(e)
             return res.status(500).send(e)
         }
     })();
