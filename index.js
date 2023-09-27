@@ -17,7 +17,7 @@ const {error} = require("firebase-functions/logger");
 app.use(cors({origin: true}))
 let hashedPassword = "";
 
-class User {
+/*class User {
     constructor(id, name, email, password, token) {
         this.id = id;
         this.email = email;
@@ -25,7 +25,7 @@ class User {
         this.password = password;
         this.token = token;
     }
-}
+}*/
 
 
 //gategory
