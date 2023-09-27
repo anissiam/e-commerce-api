@@ -9,7 +9,6 @@ admin.initializeApp({
     databaseURL: "https://ecommerce-47c0d-default-rtdb.firebaseio.com"
 });
 
-
 const express = require('express')
 const db = admin.firestore();
 const app = express();
@@ -27,6 +26,53 @@ class User {
     }
 }
 
+
+//gategory
+
+//create category
+app.post('/api/createCategory', (req, res) => {
+    (async () => {
+        try {
+            await db.collection('categories').doc('/' + req.body.id + '/')
+                .create({
+                    id:req.body.id,
+                    name: req.body.name,
+                    stock: req.body.stock,
+                    thumbnail: req.body.thumbnail
+                })
+            return res.status(200).send("Added");
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
+app.get('/api/categories', (req, res) => {
+    (async () => {
+        try {
+            let query = db.collection('categories');
+            let responce = [];
+
+            await query.get().then(value => {
+                let docs = value.docs;
+                for (let doc of docs) {
+                    const selectedItem = {
+                        id:doc.data().id,
+                        name: doc.data().name,
+                        stock: doc.data().stock,
+                        thumbnail:doc.data().thumbnail
+                    };
+                    responce.push(selectedItem);
+                }
+                return responce
+            })
+            return res.status(200).send(responce);
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
 
 //routes
 app.get('/hello-world', (req, res) => {
@@ -72,9 +118,18 @@ app.post('/api/create', (req, res) => {
         try {
             await db.collection('products').doc('/' + req.body.id + '/')
                 .create({
+                    id:req.body.id,
                     name: req.body.name,
                     description: req.body.description,
                     price: req.body.price,
+                    discount:req.body.discount,
+                    rate: req.body.rate,
+                    category: req.body.category,
+                    view: req.body.view,
+                    thumbnail: req.body.thumbnail,
+                    images: req.body.images,
+                    reviewCount: req.body.reviewCount,
+                    stock: req.body.stock,
                 })
             return res.status(200).send();
         } catch (e) {
@@ -110,10 +165,18 @@ app.get('/api/read/', (req, res) => {
                 let docs = value.docs;
                 for (let doc of docs) {
                     const selectedItem = {
-                        id: doc.id,
+                        id:doc.id,
                         name: doc.data().name,
                         description: doc.data().description,
                         price: doc.data().price,
+                        discount:doc.data().discount,
+                        rate: doc.data().rate,
+                        category: doc.data().category,
+                        view: doc.data().view,
+                        thumbnail: doc.data().thumbnail,
+                        images: doc.data().images,
+                        reviewCount: doc.data().reviewCount,
+                        stock: doc.data().stock,
                     };
                     responce.push(selectedItem);
                 }
@@ -139,10 +202,18 @@ app.get('/api/getProduct?:q', (req, res) => {
                 for (let doc of docs) {
                     if (doc.data().name.toString().includes(q)) {
                         const selectedItem = {
-                            id: doc.id,
+                            id:doc.data().id,
                             name: doc.data().name,
                             description: doc.data().description,
                             price: doc.data().price,
+                            discount:doc.data().discount,
+                            rate: doc.data().rate,
+                            category: doc.data().category,
+                            view: doc.data().view,
+                            thumbnail: doc.data().thumbnail,
+                            images: doc.data().images,
+                            reviewCount: doc.data().reviewCount,
+                            stock: doc.data().stock,
                         };
                         responce.push(selectedItem);
                     }
@@ -171,7 +242,6 @@ app.post('/api/createUser', (req, res) => {
         try {
              bcrypt.genSalt(10, function (err, Salt) {
                 bcrypt.hash(req.body.password, Salt, async function (err, hash) {
-
                     if (err) {
                         console.log(err);
                         return console.log('Cannot encrypt');
@@ -223,6 +293,25 @@ app.get('/api/allUser/', (req, res) => {
             return res.status(500).send(e)
         }
     })();
+})
+
+app.get('/api/login?:id', (req, res) => {
+    (async () => {
+        try {
+            const document = db.collection('User').doc(req.params.id);
+            let user = await document.get();
+            let response = user.data();
+            console.log(response);
+            return res.status(200).send(response);
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+    return res.status(401).json({
+        message: "Login not successful",
+        error: "User not found",
+    })
 })
 
 app.get('/api/user/:id', (req, res) => {
