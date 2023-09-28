@@ -207,35 +207,44 @@ app.get('/api/product?:name', (req, res) => {
 app.post('/api/register', (req, res) => {
     (async () => {
         try {
-            db.collection('User').where("email", "==", req.body.email)
-               .get()
-               .then(value => {
-                   if (!value.empty){
-                       return res.status(409).json({
-                           message: "Signup not successful",
-                           error: "Email already used",
-                       })
-                   }else {
-                       bcrypt.genSalt(10, function (err, Salt) {
-                           bcrypt.hash(req.body.password, Salt, async function (err, hash) {
-                               if (err) {
-                                   console.log(err);
-                                   return console.log('Cannot encrypt');
-                               }
-                               const token = crypto.randomBytes(64).toString('hex');
-                               const doc=  db.collection('User').doc();
-                               await doc.create({
-                                   id: doc.id,
-                                   name: req.body.name,
-                                   email: req.body.email,
-                                   password: hash,
-                                   token: token,
-                               })
-                               return res.status(200).send("User added");
-                           })
-                       })
-                   }
-               })
+            const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+            if (!req.body.email.toString().match(validRegex)){
+                return res.status(422).json({
+                    message: "Signup not successful",
+                    error: "Invalid email address",
+                })
+            }else {
+                db.collection('User').where("email", "==", req.body.email)
+                    .get()
+                    .then(value => {
+                        if (!value.empty){
+                            return res.status(409).json({
+                                message: "Signup not successful",
+                                error: "Email already used",
+                            })
+                        }else {
+                            bcrypt.genSalt(10, function (err, Salt) {
+                                bcrypt.hash(req.body.password, Salt, async function (err, hash) {
+                                    if (err) {
+                                        console.log(err);
+                                        return console.log('Cannot encrypt');
+                                    }
+                                    const token = crypto.randomBytes(64).toString('hex');
+                                    const doc=  db.collection('User').doc();
+                                    await doc.create({
+                                        id: doc.id,
+                                        name: req.body.name,
+                                        email: req.body.email,
+                                        password: hash,
+                                        token: token,
+                                    })
+                                    return res.status(200).send("User added");
+                                })
+                            })
+                        }
+                    })
+            }
+
 
         } catch (e) {
             return res.status(500).send(e)
@@ -270,6 +279,23 @@ app.get('/api/allUser/', (req, res) => {
         }
     })();
 })
+app.delete('/api/user/delete/:id', (req, res) => {
+    (async () => {
+        try {
+            const id = req.params.id;
+             await db.collection('User').doc(id)
+                 .delete();
+             return res.status(200).json({
+                message: "User deleted."
+            })
+        } catch (e) {
+            return  res.status(500).send(e)
+        }
+    })();
+})
+
+
+
 app.post('/api/login', (req, res) => {
     (async () => {
         try {
@@ -282,6 +308,7 @@ app.post('/api/login', (req, res) => {
                         error: "User not found",
                     })
                 } else {
+
                     value.docs.map((doc) => {
                         if (doc.data().email != null && doc.data().email.toString().includes(email)) {
                             const user = {
