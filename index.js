@@ -213,7 +213,12 @@ app.post('/api/register', (req, res) => {
                     message: "Signup not successful",
                     error: "Invalid email address",
                 })
-            }else {
+            }else if(req.body.password.toString().length<6){
+                return res.status(422).json({
+                    message: "Signup not successful",
+                    error: "Password must be more than 6 digit",
+                })
+            } else {
                 db.collection('User').where("email", "==", req.body.email)
                     .get()
                     .then(value => {
