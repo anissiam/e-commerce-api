@@ -18,13 +18,86 @@ const cors = require('cors')
 //app.use(bodyParser.json())
 app.use(express.json());
 const {error, log} = require("firebase-functions/logger");
-app.use(cors({origin: true , credentials:true,
-    optionSuccessStatus:200}))
+const moment = require("moment/moment");
+app.use(cors({
+    origin: true, credentials: true,
+    optionSuccessStatus: 200
+}))
 const port = 3000;
 let hashedPassword = "";
 
 
 
+var dateString =  moment().format('MMM DD,yyyy');
+console.log(dateString)
+app.post('/api/review/add', (req, res) => {
+    (async () => {
+        try {
+            const doc=  db.collection('reviews').doc();
+            await doc.create({
+                reviewId: doc.reviewId,
+                productId: req.body.productId,
+                name: req.body.name,
+                rate: req.body.rate,
+                text:req.body.text,
+                image:req.body.image,
+                dateCreated: req.body.dateCreated,
+            })
+            return res.status(200).send("Added");
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
+
+
+app.post('/api/cart/add', (req, res) => {
+    (async () => {
+        try {
+            const doc=  db.collection('cart').doc();
+            await doc.create({
+                orderId: doc.id,
+                userId: req.body.userId,
+                products: req.body.products,
+                totalPrice:req.body.totalPrice
+            })
+            return res.status(200).send("Added");
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
+
+app.get('/api/carts/:id', (req, res) => {
+    (async () => {
+        try {
+            let query = db.collection('cart').where("userId","==" ,req.params.id).limit(1);
+            let responce = [];
+
+            await query.get().then(value => {
+                if (!value.empty){
+                    let docs = value.docs;
+                    for (let doc of docs) {
+                        const selectedItem = {
+                            userId: doc.data().userId,
+                            totalPrice: doc.data().totalPrice,
+                            orderId: doc.data().orderId,
+                            products: doc.data().products,
+                        };
+                        responce.push(selectedItem);
+                    }
+                    return responce
+                }
+            })
+            return res.status(200).send(responce);
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
 
 //Category
 
@@ -46,6 +119,8 @@ app.post('/api/createCategory', (req, res) => {
         }
     })();
 })
+
+
 app.get('/api/categories', (req, res) => {
     (async () => {
         try {
@@ -208,12 +283,12 @@ app.post('/api/register', (req, res) => {
     (async () => {
         try {
             const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
-            if (!req.body.email.toString().match(validRegex)){
+            if (!req.body.email.toString().match(validRegex)) {
                 return res.status(422).json({
                     message: "Signup not successful",
                     error: "Invalid email address",
                 })
-            }else if(req.body.password.toString().length<6){
+            } else if (req.body.password.toString().length < 6) {
                 return res.status(422).json({
                     message: "Signup not successful",
                     error: "Password must be more than 6 digit",
@@ -222,12 +297,12 @@ app.post('/api/register', (req, res) => {
                 db.collection('User').where("email", "==", req.body.email)
                     .get()
                     .then(value => {
-                        if (!value.empty){
+                        if (!value.empty) {
                             return res.status(409).json({
                                 message: "Signup not successful",
                                 error: "Email already used",
                             })
-                        }else {
+                        } else {
                             bcrypt.genSalt(10, function (err, Salt) {
                                 bcrypt.hash(req.body.password, Salt, async function (err, hash) {
                                     if (err) {
@@ -235,7 +310,7 @@ app.post('/api/register', (req, res) => {
                                         return console.log('Cannot encrypt');
                                     }
                                     const token = crypto.randomBytes(64).toString('hex');
-                                    const doc=  db.collection('User').doc();
+                                    const doc = db.collection('User').doc();
                                     await doc.create({
                                         id: doc.id,
                                         name: req.body.name,
@@ -288,23 +363,22 @@ app.delete('/api/user/delete/:id', (req, res) => {
     (async () => {
         try {
             const id = req.params.id;
-             await db.collection('User').doc(id)
-                 .delete();
-             return res.status(200).json({
+            await db.collection('User').doc(id)
+                .delete();
+            return res.status(200).json({
                 message: "User deleted."
             })
         } catch (e) {
-            return  res.status(500).send(e)
+            return res.status(500).send(e)
         }
     })();
 })
 
 
-
 app.post('/api/login', (req, res) => {
     (async () => {
         try {
-            const { email, password } = req.body;
+            const {email, password} = req.body;
             db.collection('User').where("email", "==", email)
                 .get().then(value => {
                 if (value.empty) {
@@ -325,12 +399,12 @@ app.post('/api/login', (req, res) => {
                             bcrypt.compare(password.toString(), doc.data().password,
                                 async function (err, isMatch) {
                                     if (isMatch) {
-                                        return  res.status(200).json({
+                                        return res.status(200).json({
                                             message: "Login successful",
                                             user,
                                         })
-                                    }else {
-                                        return  res.status(400).json({
+                                    } else {
+                                        return res.status(400).json({
                                             message: "Email or Password not correct",
                                         })
                                     }
@@ -440,26 +514,57 @@ app.get('/api/user?:token', (req, res) => {
 })
 
 //update
-app.put('/api/update/:id', (req, res) => {
+app.put('/api/user/update/:id', (req, res) => {
     (async () => {
         try {
             const document = db.collection('User').doc(req.params.id);
             let userFireStore = await document.get();
             let response = userFireStore.data();
+
             let name = response.name;
-            if (req.body.name !== null) {
+            if (req.body.name !== null && req.body.name !== undefined) {
                 name = req.body.name;
             }
 
             let email = response.email;
-            if (req.body.email !== null) {
+            if (req.body.email !== null && req.body.email !== undefined) {
                 email = req.body.email;
             }
-            /*const user = new User(response.id, name, email, response.password, response.token)
-            await document.update({
-                user
-            })*/
-            return res.status(200).send("User Updated");
+
+            let password = response.password;
+            if (req.body.oldPassword !== null && req.body.oldPassword !== undefined) {
+                console.log()
+                bcrypt.compare(req.body.oldPassword,password.toString(),
+                    async function (err, isMatch) {
+                        if (isMatch) {
+                            bcrypt.genSalt(10, function (err, Salt) {
+                                bcrypt.hash(req.body.newPassword, Salt, async function (err, hash) {
+                                    if (err) {
+                                        console.log(err);
+                                        return console.log('Cannot encrypt');
+                                    }
+                                    await document.update({
+                                        name: name,
+                                        email: email,
+                                        password: hash,
+                                    })
+                                    return res.status(200).send("User Updated");
+                                })
+                            })
+                        } else {
+                            return res.status(422).json({
+                                message: "Password not match",
+                            })
+                        }
+                    })
+            } else {
+                await document.update({
+                    name: name,
+                    email: email,
+                })
+                return res.status(200).send("User Updated");
+            }
+
         } catch (e) {
             console.log(e)
             return res.status(500).send(e)
@@ -467,7 +572,7 @@ app.put('/api/update/:id', (req, res) => {
     })();
 })
 
-app.listen(port , () => {
+app.listen(port, () => {
     console.log("Port is " + port);
 })
 exports.app = functions.https.onRequest(app);
