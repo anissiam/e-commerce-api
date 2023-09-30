@@ -160,7 +160,7 @@ app.post('/api/createCategory', (req, res) => {
 app.get('/api/categories', (req, res) => {
     (async () => {
         try {
-            let query = db.collection('categories');
+            let query = db.collection('categories').limit(2);
             let responce = [];
 
             await query.get().then(value => {
@@ -236,7 +236,7 @@ app.get('/api/products/:id', (req, res) => {
 app.get('/api/products/', (req, res) => {
     (async () => {
         try {
-            let query = db.collection('products');
+            let query = db.collection('products').limit(2);
             let responce = [];
 
             await query.get().then(value => {
