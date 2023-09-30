@@ -28,20 +28,21 @@ let hashedPassword = "";
 
 
 
-var dateString =  moment().format('MMM DD,yyyy');
-console.log(dateString)
+
 app.post('/api/review/add', (req, res) => {
     (async () => {
         try {
+            const dateString =  moment().format('MMM DD,yyyy');
+
             const doc=  db.collection('reviews').doc();
             await doc.create({
-                reviewId: doc.reviewId,
+                reviewId: doc.id,
                 productId: req.body.productId,
                 name: req.body.name,
                 rate: req.body.rate,
                 text:req.body.text,
                 image:req.body.image,
-                dateCreated: req.body.dateCreated,
+                dateCreated: dateString,
             })
             return res.status(200).send("Added");
         } catch (e) {
@@ -51,6 +52,40 @@ app.post('/api/review/add', (req, res) => {
     })();
 })
 
+
+
+app.get('/api/review/:productId', (req, res) => {
+    (async () => {
+        try {
+            const prodId = parseInt(req.params.productId);
+            let query = db.collection('reviews').where("productId","==" ,prodId);
+            let responce = [];
+
+            await query.get().then(value => {
+                if (!value.empty){
+                    let docs = value.docs;
+                    for (let doc of docs) {
+                        const selectedItem = {
+                            reviewId: doc.data().reviewId,
+                            productId: doc.data().productId,
+                            name: doc.data().name,
+                            rate: doc.data().rate,
+                            text:doc.data().text,
+                            image:doc.data().image,
+                            dateCreated: doc.data().dateCreated,
+                        };
+                        responce.push(selectedItem);
+                    }
+                    return responce
+                }
+            })
+            return res.status(200).send(responce);
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
 
 app.post('/api/cart/add', (req, res) => {
     (async () => {
@@ -69,6 +104,7 @@ app.post('/api/cart/add', (req, res) => {
         }
     })();
 })
+
 
 app.get('/api/carts/:id', (req, res) => {
     (async () => {
