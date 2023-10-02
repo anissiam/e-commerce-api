@@ -26,7 +26,9 @@ app.use(cors({
 const port = 3000;
 let hashedPassword = "";
 
-
+app.get('/', (req, res) => {
+    res.send("API  ")
+});
 
 
 app.post('/api/review/add', (req, res) => {
@@ -457,51 +459,6 @@ app.post('/api/login', (req, res) => {
     })();
 })
 
-/*app.get('/api/login', (req, res) => {
-    (async () => {
-        try {
-            let email = req.query.email;
-            let password = req.query.password;
-            db.collection('User').where("email", "==", email)
-                .get().then(value => {
-                if (value.empty) {
-
-                    return res.status(401).json({
-                        message: "Login not successful",
-                        error: "User not found",
-                    })
-                } else {
-                    value.docs.map((doc) => {
-                        if (doc.data().email != null && doc.data().email.toString().includes(email)) {
-                            const user = {
-                                id: doc.data().id,
-                                name: doc.data().name,
-                                email: doc.data().email,
-                                token: doc.data().token,
-                            };
-                            bcrypt.compare(password.toString(), doc.data().password,
-                                async function (err, isMatch) {
-                                    if (isMatch) {
-                                        return  res.status(200).json({
-                                            message: "Login successful",
-                                            user,
-                                        })
-                                    }else {
-                                       return  res.status(400).json({
-                                            message: "Email or Password not correct",
-                                        })
-                                    }
-                                })
-                        }
-                    })
-                }
-            });
-        } catch (e) {
-            console.log(e)
-            return res.status(500).send(e)
-        }
-    })();
-})*/
 
 
 app.get('/api/user/:id', (req, res) => {
@@ -510,14 +467,37 @@ app.get('/api/user/:id', (req, res) => {
             const document = db.collection('User').doc(req.params.id);
             let user = await document.get();
             let response = user.data();
-            console.log(response);
-            return res.status(200).send(response);
+            const user1 = {
+                id: response['id'],
+                name: response['name'],
+                email: response['email'],
+                token: response['token'],
+            };
+            return res.status(200).send(user1);
         } catch (e) {
             console.log(e)
             return res.status(500).send(e)
         }
     })();
 })
+
+
+/*app.get('/api/user/logout/:id', (req, res) => {
+    (async () => {
+        try {
+              await db.collection('User').doc(req.params.id)
+                .update({
+                    "token": "",
+                });
+
+            return res.status(200).send("Logout");
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})*/
+
 app.get('/api/user?:token', (req, res) => {
     (async () => {
         try {
