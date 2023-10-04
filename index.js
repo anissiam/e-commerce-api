@@ -353,6 +353,9 @@ app.post('/api/register', (req, res) => {
                                         id: doc.id,
                                         name: req.body.name,
                                         email: req.body.email,
+                                        firstName:"",
+                                        image:"https://www.pngmart.com/files/22/User-Avatar-Profile-PNG-Isolated-Transparent-Picture.png",
+                                        lastName:"",
                                         password: hash,
                                         token: token,
                                     })
@@ -362,8 +365,6 @@ app.post('/api/register', (req, res) => {
                         }
                     })
             }
-
-
         } catch (e) {
             return res.status(500).send(e)
         }
@@ -472,6 +473,8 @@ app.get('/api/user/:id', (req, res) => {
                 name: response['name'],
                 email: response['email'],
                 token: response['token'],
+                firstName:response['firstName'],
+                lastName:response['lastName'],
             };
             return res.status(200).send(user1);
         } catch (e) {
@@ -481,22 +484,6 @@ app.get('/api/user/:id', (req, res) => {
     })();
 })
 
-
-/*app.get('/api/user/logout/:id', (req, res) => {
-    (async () => {
-        try {
-              await db.collection('User').doc(req.params.id)
-                .update({
-                    "token": "",
-                });
-
-            return res.status(200).send("Logout");
-        } catch (e) {
-            console.log(e)
-            return res.status(500).send(e)
-        }
-    })();
-})*/
 
 app.get('/api/user?:token', (req, res) => {
     (async () => {
@@ -537,19 +524,13 @@ app.put('/api/user/update/:id', (req, res) => {
             let userFireStore = await document.get();
             let response = userFireStore.data();
 
-            let name = response.name;
-            if (req.body.name !== null && req.body.name !== undefined) {
-                name = req.body.name;
-            }
+            const user = req.body;
 
-            let email = response.email;
-            if (req.body.email !== null && req.body.email !== undefined) {
-                email = req.body.email;
-            }
+            const updatedUser = (({ oldPassword,newPassword, ...o }) => o)(user) // remove b and c
+            console.log(updatedUser)
 
             let password = response.password;
             if (req.body.oldPassword !== null && req.body.oldPassword !== undefined) {
-                console.log()
                 bcrypt.compare(req.body.oldPassword,password.toString(),
                     async function (err, isMatch) {
                         if (isMatch) {
@@ -559,11 +540,10 @@ app.put('/api/user/update/:id', (req, res) => {
                                         console.log(err);
                                         return console.log('Cannot encrypt');
                                     }
-                                    await document.update({
-                                        name: name,
-                                        email: email,
-                                        password: hash,
-                                    })
+                                    updatedUser.password = hash;
+                                    await document.update(
+                                        updatedUser
+                                    )
                                     return res.status(200).send("User Updated");
                                 })
                             })
@@ -573,14 +553,12 @@ app.put('/api/user/update/:id', (req, res) => {
                             })
                         }
                     })
-            } else {
-                await document.update({
-                    name: name,
-                    email: email,
-                })
+            }else {
+                await document.update(
+                    updatedUser
+                )
                 return res.status(200).send("User Updated");
             }
-
         } catch (e) {
             console.log(e)
             return res.status(500).send(e)
