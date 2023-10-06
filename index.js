@@ -31,6 +31,26 @@ app.get('/', (req, res) => {
 });
 
 
+app.get('/api/home'  ,(req, res) => {
+    (async () => {
+        try {
+            let query = db.collection('home');
+            let responce = [];
+
+            await query.get().then(value => {
+                let docs = value.docs;
+                for (let doc of docs) {
+                    responce.push(doc.data());
+                }
+                return responce[0];
+            })
+            return res.status(200).send(responce);
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
 app.post('/api/review/add', (req, res) => {
     (async () => {
         try {
@@ -162,7 +182,7 @@ app.post('/api/createCategory', (req, res) => {
 app.get('/api/categories', (req, res) => {
     (async () => {
         try {
-            let query = db.collection('categories').limit(1);
+            let query = db.collection('categories');
             let responce = [];
 
             await query.get().then(value => {
@@ -238,7 +258,7 @@ app.get('/api/products/:id', (req, res) => {
 app.get('/api/products/', (req, res) => {
     (async () => {
         try {
-            let query = db.collection('products').limit(1);
+            let query = db.collection('products');
             let responce = [];
 
             await query.get().then(value => {
@@ -527,7 +547,7 @@ app.put('/api/user/update/:id', (req, res) => {
 
             const user = req.body;
 
-            const updatedUser = (({ oldPassword,newPassword, ...o }) => o)(user) // remove b and c
+            const updatedUser = (({ oldPassword,newPassword, ...o }) => o)(user)
             console.log(updatedUser)
 
             let password = response.password;
@@ -567,6 +587,51 @@ app.put('/api/user/update/:id', (req, res) => {
     })();
 })
 
+app.post('/api/address/create',(req, res) => {
+    (async () => {
+        console.log(req.body);
+        try {
+            const doc=  db.collection('address').doc();
+            await doc.create({
+                addressId: doc.id,
+                userId: req.body.userId,
+                addressTitle:req.body.addressTitle,
+                city: req.body.city,
+                street: req.body.street,
+                country:req.body.country,
+                firstLine:req.body.firstLine,
+            })
+            return res.status(200).send("Added");
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
+
+
+app.get('/api/address/:userId', (req, res) => {
+    (async () => {
+        try {
+            let query = db.collection('address').where("userId","==" ,req.params.userId);
+            let responce = [];
+
+            await query.get().then(value => {
+                if (!value.empty){
+                    let docs = value.docs;
+                    for (let doc of docs) {
+                        responce.push(doc.data());
+                    }
+                    return responce
+                }
+            })
+            return res.status(200).send(responce);
+        } catch (e) {
+            console.log(e)
+            return res.status(500).send(e)
+        }
+    })();
+})
 app.listen(port, () => {
     console.log("Port is " + port);
 })
