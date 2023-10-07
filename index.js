@@ -19,6 +19,7 @@ const cors = require('cors')
 app.use(express.json());
 const {error, log} = require("firebase-functions/logger");
 const moment = require("moment/moment");
+const {add} = require("nodemon/lib/rules");
 app.use(cors({
     origin: true, credentials: true,
     optionSuccessStatus: 200
@@ -31,7 +32,7 @@ app.get('/', (req, res) => {
 });
 
 
-app.get('/api/home'  ,(req, res) => {
+app.get('/api/home', (req, res) => {
     (async () => {
         try {
             let query = db.collection('home');
@@ -54,16 +55,16 @@ app.get('/api/home'  ,(req, res) => {
 app.post('/api/review/add', (req, res) => {
     (async () => {
         try {
-            const dateString =  moment().format('MMM DD,yyyy');
+            const dateString = moment().format('MMM DD,yyyy');
 
-            const doc=  db.collection('reviews').doc();
+            const doc = db.collection('reviews').doc();
             await doc.create({
                 reviewId: doc.id,
                 productId: req.body.productId,
                 name: req.body.name,
                 rate: req.body.rate,
-                text:req.body.text,
-                image:req.body.image,
+                text: req.body.text,
+                image: req.body.image,
                 dateCreated: dateString,
             })
             return res.status(200).send("Added");
@@ -75,16 +76,15 @@ app.post('/api/review/add', (req, res) => {
 })
 
 
-
 app.get('/api/review/:productId', (req, res) => {
     (async () => {
         try {
             const prodId = parseInt(req.params.productId);
-            let query = db.collection('reviews').where("productId","==" ,prodId);
+            let query = db.collection('reviews').where("productId", "==", prodId);
             let responce = [];
 
             await query.get().then(value => {
-                if (!value.empty){
+                if (!value.empty) {
                     let docs = value.docs;
                     for (let doc of docs) {
                         const selectedItem = {
@@ -92,8 +92,8 @@ app.get('/api/review/:productId', (req, res) => {
                             productId: doc.data().productId,
                             name: doc.data().name,
                             rate: doc.data().rate,
-                            text:doc.data().text,
-                            image:doc.data().image,
+                            text: doc.data().text,
+                            image: doc.data().image,
                             dateCreated: doc.data().dateCreated,
                         };
                         responce.push(selectedItem);
@@ -112,12 +112,12 @@ app.get('/api/review/:productId', (req, res) => {
 app.post('/api/cart/add', (req, res) => {
     (async () => {
         try {
-            const doc=  db.collection('cart').doc();
+            const doc = db.collection('cart').doc();
             await doc.create({
                 orderId: doc.id,
                 userId: req.body.userId,
                 products: req.body.products,
-                totalPrice:req.body.totalPrice
+                totalPrice: req.body.totalPrice
             })
             return res.status(200).send("Added");
         } catch (e) {
@@ -131,11 +131,11 @@ app.post('/api/cart/add', (req, res) => {
 app.get('/api/carts/:id', (req, res) => {
     (async () => {
         try {
-            let query = db.collection('cart').where("userId","==" ,req.params.id);
+            let query = db.collection('cart').where("userId", "==", req.params.id);
             let responce = [];
 
             await query.get().then(value => {
-                if (!value.empty){
+                if (!value.empty) {
                     let docs = value.docs;
                     for (let doc of docs) {
                         const selectedItem = {
@@ -300,7 +300,8 @@ app.get('/api/product?:name', (req, res) => {
             await query.get().then(value => {
                 let docs = value.docs;
                 for (let doc of docs) {
-                    if (doc.data().name.toString().includes(q)) {
+                    const name = doc.data().name.toString().toLowerCase();
+                    if (name.includes(q.toLowerCase())) {
                         const selectedItem = {
                             id: doc.data().id,
                             name: doc.data().name,
@@ -373,9 +374,9 @@ app.post('/api/register', (req, res) => {
                                         id: doc.id,
                                         name: req.body.name,
                                         email: req.body.email,
-                                        firstName:"",
-                                        image:"https://www.pngmart.com/files/22/User-Avatar-Profile-PNG-Isolated-Transparent-Picture.png",
-                                        lastName:"",
+                                        firstName: "",
+                                        image: "https://www.pngmart.com/files/22/User-Avatar-Profile-PNG-Isolated-Transparent-Picture.png",
+                                        lastName: "",
                                         password: hash,
                                         token: token,
                                     })
@@ -481,7 +482,6 @@ app.post('/api/login', (req, res) => {
 })
 
 
-
 app.get('/api/user/:id', (req, res) => {
     (async () => {
         try {
@@ -493,9 +493,9 @@ app.get('/api/user/:id', (req, res) => {
                 name: response['name'],
                 email: response['email'],
                 token: response['token'],
-                firstName:response['firstName'],
-                lastName:response['lastName'],
-                image:response['image']
+                firstName: response['firstName'],
+                lastName: response['lastName'],
+                image: response['image']
             };
             return res.status(200).send(user1);
         } catch (e) {
@@ -547,12 +547,12 @@ app.put('/api/user/update/:id', (req, res) => {
 
             const user = req.body;
 
-            const updatedUser = (({ oldPassword,newPassword, ...o }) => o)(user)
+            const updatedUser = (({oldPassword, newPassword, ...o}) => o)(user)
             console.log(updatedUser)
 
             let password = response.password;
             if (req.body.oldPassword !== null && req.body.oldPassword !== undefined) {
-                bcrypt.compare(req.body.oldPassword,password.toString(),
+                bcrypt.compare(req.body.oldPassword, password.toString(),
                     async function (err, isMatch) {
                         if (isMatch) {
                             bcrypt.genSalt(10, function (err, Salt) {
@@ -574,7 +574,7 @@ app.put('/api/user/update/:id', (req, res) => {
                             })
                         }
                     })
-            }else {
+            } else {
                 await document.update(
                     updatedUser
                 )
@@ -587,20 +587,15 @@ app.put('/api/user/update/:id', (req, res) => {
     })();
 })
 
-app.post('/api/address/create',(req, res) => {
+app.post('/api/address/create', (req, res) => {
     (async () => {
-        console.log(req.body);
+        const addressBody = req.body;
         try {
-            const doc=  db.collection('address').doc();
-            await doc.create({
-                addressId: doc.id,
-                userId: req.body.userId,
-                addressTitle:req.body.addressTitle,
-                city: req.body.city,
-                street: req.body.street,
-                country:req.body.country,
-                firstLine:req.body.firstLine,
-            })
+            const doc = db.collection('address').doc();
+            addressBody.addressId = doc.id;
+            await doc.create(
+                addressBody,
+            )
             return res.status(200).send("Added");
         } catch (e) {
             console.log(e)
@@ -613,11 +608,11 @@ app.post('/api/address/create',(req, res) => {
 app.get('/api/address/:userId', (req, res) => {
     (async () => {
         try {
-            let query = db.collection('address').where("userId","==" ,req.params.userId);
+            let query = db.collection('address').where("userId", "==", req.params.userId);
             let responce = [];
 
             await query.get().then(value => {
-                if (!value.empty){
+                if (!value.empty) {
                     let docs = value.docs;
                     for (let doc of docs) {
                         responce.push(doc.data());
@@ -631,6 +626,40 @@ app.get('/api/address/:userId', (req, res) => {
             return res.status(500).send(e)
         }
     })();
+})
+
+app.post('/api/order/create', async (req, res) => {
+    try {
+        const orderBody = req.body;
+        orderBody.status = "placed"
+        orderBody.createdAt = new Date();
+
+        const doc = db.collection('orders').doc();
+        orderBody.orderId = doc.id;
+        await doc.create(orderBody);
+
+        const address = await db.collection('address').where("userId", "==", orderBody.userId).limit(1).get();
+        if (address.empty) {
+            const addressBody = orderBody.address;
+            addressBody.userId = orderBody.userId
+            try {
+                const doc = db.collection('address').doc();
+                addressBody.addressId = doc.id;
+                await doc.create(
+                    addressBody,
+                )
+            } catch (e) {
+                console.log(e)
+                return res.status(500).send(e)
+            }
+        }
+
+
+        return res.status(200).send("added");
+    }catch (e){
+        return res.status(500).send(e)
+    }
+
 })
 app.listen(port, () => {
     console.log("Port is " + port);
